@@ -93,12 +93,10 @@ function mount() {
     h('div', { class: 'brand' }, state.meta.name),
     cell('stage', stage.name),
     cell(nd ? nd.title.slice(0, 34) : 'next deadline', nd ? `${daysUntil(nd.date)}d` : '–', nd && daysUntil(nd.date) < 7 ? 'warn' : ''),
-    cell('due in 7 days', String(stats.soon.length)),
-    cell('overdue', String(stats.overdue.length), stats.overdue.length ? 'bad' : ''),
-    cell('readiness', `${Math.round(ready.frac * 100)}%`),
-    cell('data as of', fmtDate(state.meta.updated, false), upd != null && upd < -7 ? 'warn' : ''),
+    stats.overdue.length ? cell('overdue', String(stats.overdue.length), 'bad') : null,
     h('div', { class: 'grow' }),
     h('div', { class: 'tools' },
+      h('span', { class: 'faint' }, `as of ${fmtDate(state.meta.updated, false)}`),
       h('button', { class: 'btn ghost small', onclick: () => openPalette() }, 'Search ', h('kbd', {}, '/')),
       plainMode ? h('span', { class: 'faint' }, 'local') : h('button', { class: 'btn ghost small', onclick: () => showLock() }, 'Lock')));
 
