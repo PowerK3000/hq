@@ -1,0 +1,5 @@
+# Plaintext data and secrets never leave this machine; only data/state.enc.json is published.
+data/state.plain.json
+.env
+node_modules/
+.claude/
