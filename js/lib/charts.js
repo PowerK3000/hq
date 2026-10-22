@@ -27,7 +27,7 @@ export function barChart({ groups, series, target, height = 190, todayIndex }) {
     const x0 = padL + gi * gw + (gw - bw * series.length) / 2;
     g.values.forEach((v, si) => {
       const bh = (innerH * v) / maxV;
-      svg.append(h('svg:rect', { class: `s${si}`, x: x0 + si * bw, y: padT + innerH - bh, width: bw - 1, height: Math.max(bh, v > 0 ? 1 : 0), rx: 1.5 },
+      svg.append(h('svg:rect', { class: `s${si}`, x: x0 + si * bw, y: padT + innerH - bh, width: bw - 1, height: Math.max(bh, v > 0 ? 1 : 0), rx: 2, vars: { '--d': `${gi * 28 + si * 10}ms` } },
         h('svg:title', {}, `${g.label}: ${series[si].name} ${v}`)));
     });
     if (groups.length <= 14 || gi % 2 === 0) {
@@ -89,7 +89,7 @@ export function lineChart({ points, height = 170, target }) {
   }
   const step = points.length > 1 ? innerW / (points.length - 1) : 0;
   const pts = points.map((p, i) => [padL + i * step, padT + innerH - (innerH * p.value) / maxV]);
-  if (pts.length) svg.append(h('svg:polyline', { class: 'l0', points: pts.map((p) => p.join(',')).join(' ') }));
+  if (pts.length) svg.append(h('svg:polyline', { class: 'l0', pathLength: '1', points: pts.map((p) => p.join(',')).join(' ') }));
   pts.forEach((p, i) => svg.append(h('svg:circle', { class: 's0', cx: p[0], cy: p[1], r: 2.5 }, h('svg:title', {}, `${points[i].label}: ${points[i].value}`))));
   points.forEach((p, i) => { if (points.length <= 14 || i % 2 === 0) svg.append(h('svg:text', { x: padL + i * step, y: height - 8, 'text-anchor': 'middle' }, p.label)); });
   if (target) {

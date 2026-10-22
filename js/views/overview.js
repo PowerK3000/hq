@@ -1,7 +1,7 @@
 // The hub is deliberately thin: where we are, what's next, and one-line doors into the detail views.
 import { h } from '../lib/dom.js';
 import { panel, page, ownerSpan } from '../lib/ui.js';
-import { fmtDate, rel, daysUntil, money, mult } from '../lib/fmt.js';
+import { fmtDate, rel, daysUntil, money, mult, todayKey } from '../lib/fmt.js';
 import { readinessStats, taskStats, agenda, funnelWeeks, blockers, holdingMetrics } from '../lib/derive.js';
 import { underwrite } from '../lib/uw.js';
 
@@ -23,16 +23,16 @@ export default function overview(state, ctx) {
     h('span', {}, name), h('span', { class: 'mute' }, summary), h('span', { class: 'faint', 'aria-hidden': 'true' }, '→'));
 
   return h('div', { class: 'view hub' },
-    h('div', { class: 'hub-head' }, h('h1', {}, state.meta.company), h('p', {}, state.meta.goal)),
+    h('div', { class: 'hub-head' }, h('span', { class: 'today' }, fmtDate(todayKey())), h('h1', {}, state.meta.company), h('p', {}, state.meta.goal)),
 
     panel(`Now: ${stage.name}`, { meta: stage.window },
       h('p', { class: 'mute' }, stage.summary),
       h('div', { class: 'gap' }),
       h('dl', { class: 'kv hub-kv' },
         h('dt', {}, 'Decision date'), h('dd', {}, dd == null ? '–' : `${fmtDate(state.meta.decisionDate, false)} · ${dd} days`),
-        h('dt', {}, 'Due this week'), h('dd', {}, String(stats.soon.length)),
-        h('dt', {}, 'Overdue'), h('dd', { class: stats.overdue.length ? 'bad' : '' }, String(stats.overdue.length)),
-        h('dt', {}, 'Readiness'), h('dd', {}, `${ready.done} of ${ready.total}`))),
+        h('dt', {}, 'Due this week'), h('dd', { 'data-count': '' }, String(stats.soon.length)),
+        h('dt', {}, 'Overdue'), h('dd', { class: stats.overdue.length ? 'bad' : '', 'data-count': '' }, String(stats.overdue.length)),
+        h('dt', {}, 'Readiness'), h('dd', { 'data-count': '' }, `${ready.done} of ${ready.total}`))),
 
     blk.length ? h('button', { class: 'notice warn door-notice', type: 'button', onclick: () => ctx.go('readiness') },
       `${blk.length} blocked: ${blk.map((b) => b.text).join('; ')}`) : null,

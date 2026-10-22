@@ -1,7 +1,8 @@
 import { h, clear } from './lib/dom.js';
+import { icon } from './lib/icons.js';
 import { decryptState } from './lib/crypto.js';
 import { daysUntil, fmtDate } from './lib/fmt.js';
-import { readinessStats, taskStats, nextDeadline, searchIndex } from './lib/derive.js';
+import { taskStats, searchIndex } from './lib/derive.js';
 import overview from './views/overview.js';
 import roadmap from './views/roadmap.js';
 import tasks from './views/tasks.js';
@@ -69,6 +70,7 @@ async function showLock(message) {
       btn.disabled = false; input.focus(); input.select();
     }
   } },
+  h('span', { class: 'mark' }, icon('mark')),
   h('h1', {}, 'HQ'),
   h('p', {}, 'Private. Enter the passphrase to decrypt the data in this browser.'),
   h('label', { for: 'pass' }, 'Passphrase', input),
@@ -83,59 +85,85 @@ function armIdle() {
 }
 
 /* ---------- shell ---------- */
+const GROUP_LABELS = ['Workspace', 'Pipeline', 'Numbers', 'Record'];
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+
 function mount() {
   clear(app);
-  const stats = taskStats(state); const ready = readinessStats(state); const nd = nextDeadline(state);
-  const stage = state.stages.find((s) => s.status === 'active') || state.stages[0];
-  const upd = daysUntil(state.meta.updated);
-  const cell = (label, value, tone = '') => h('div', { class: 'cell' }, h('b', { class: tone }, value), h('span', {}, label));
-  const strip = h('header', { class: 'strip' },
-    h('div', { class: 'brand' }, state.meta.name),
-    cell('stage', stage.name),
-    cell(nd ? nd.title.slice(0, 34) : 'next deadline', nd ? `${daysUntil(nd.date)}d` : '–', nd && daysUntil(nd.date) < 7 ? 'warn' : ''),
-    stats.overdue.length ? cell('overdue', String(stats.overdue.length), 'bad') : null,
-    h('div', { class: 'grow' }),
-    h('div', { class: 'tools' },
-      h('span', { class: 'faint' }, `as of ${fmtDate(state.meta.updated, false)}`),
-      h('button', { class: 'btn ghost small', onclick: () => openPalette() }, 'Search ', h('kbd', {}, '/')),
-      plainMode ? h('span', { class: 'faint' }, 'local') : h('button', { class: 'btn ghost small', onclick: () => showLock() }, 'Lock')));
-
+  const stats = taskStats(state);
   const counts = { tasks: stats.open.length, network: state.contacts.length, deals: state.pipeline.length };
-  const rail = h('nav', { class: 'rail', 'aria-label': 'Views' });
+  const rail = h('nav', { class: 'rail', 'aria-label': 'Views' },
+    h('div', { class: 'brand' }, h('span', { class: 'mark' }, icon('mark')), state.meta.name));
   GROUPS.forEach((g, gi) => {
-    if (gi) rail.append(h('div', { class: 'sep' }));
+    rail.append(h('div', { class: 'group' }, GROUP_LABELS[gi]));
     for (const id of g) {
-      rail.append(h('button', { type: 'button', 'data-view': id, onclick: () => go(id) },
-        VIEWS[id][0], counts[id] != null ? h('span', { class: 'count' }, String(counts[id])) : null));
+      rail.append(h('button', { class: 'nav', type: 'button', 'data-view': id, onclick: () => go(id) },
+        icon(id), VIEWS[id][0], counts[id] ? h('span', { class: 'count' }, String(counts[id])) : null));
     }
   });
+  rail.append(h('div', { class: 'spacer' }), h('div', { class: 'foot' }, state.meta.company));
+
+  const topbar = h('header', { class: 'topbar' },
+    h('div', { class: 'crumb', id: 'crumb' }),
+    h('div', { class: 'grow' }),
+    h('span', { class: 'stamp' }, `Data as of ${fmtDate(state.meta.updated, false)}`),
+    h('button', { class: 'search', type: 'button', onclick: () => openPalette(), 'aria-label': 'Search' }, icon('search'), h('span', {}, 'Search'), h('kbd', {}, '/')),
+    plainMode ? h('span', { class: 'stamp' }, 'local') : h('button', { class: 'btn ghost small', type: 'button', onclick: () => showLock() }, 'Lock'));
 
   const main = h('main', { id: 'main', tabindex: '-1' });
-  app.append(h('div', { class: 'shell' }, strip, rail, main));
-  renderView();
+  app.append(h('div', { class: 'shell' }, rail, h('div', { class: 'content' }, topbar, main)));
+  renderView(false);
   armIdle();
 }
 
-function renderView() {
+// Stagger entrance order and animate numbers once the view is in the DOM.
+function enhance(main) {
+  const items = main.querySelectorAll('.view > *, .view .grid > *');
+  items.forEach((el, i) => el.style.setProperty('--i', String(Math.min(i, 8))));
+  if (REDUCED.matches) return;
+  main.querySelectorAll('[data-count]').forEach((el) => {
+    const m = el.textContent.match(/\d+/); if (!m) return;
+    const target = parseInt(m[0], 10); const start = performance.now();
+    const rest = el.textContent.slice(m.index + m[0].length); const pre = el.textContent.slice(0, m.index);
+    const tick = (now) => {
+      const t = Math.min((now - start) / 800, 1);
+      el.textContent = `${pre}${Math.round(target * (1 - Math.pow(1 - t, 3)))}${rest}`;
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    el.textContent = `${pre}0${rest}`;
+    requestAnimationFrame(tick);
+  });
+}
+
+function paint() {
   const main = document.getElementById('main'); if (!main || !state) return;
   const id = current();
   clear(main);
-  document.title = `${VIEWS[id][0]} · ${state.meta.name}`;
-  document.querySelectorAll('.rail button').forEach((b) => {
+  document.title = `${VIEWS[id][0]} \u00b7 ${state.meta.name}`;
+  const crumb = document.getElementById('crumb');
+  if (crumb) { clear(crumb); crumb.append(h('span', {}, `${state.meta.name} / `), VIEWS[id][0]); }
+  document.querySelectorAll('.rail button.nav').forEach((b) => {
     if (b.dataset.view === id) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   const upd = daysUntil(state.meta.updated);
   if (upd != null && upd < -7) main.append(h('div', { class: 'notice warn' }, `Data was last updated ${-upd} days ago (${fmtDate(state.meta.updated, false)}). Ask Claude to refresh it.`));
   try {
-    main.append(VIEWS[id][1](state, { go, rerender: renderView }));
+    main.append(VIEWS[id][1](state, { go, rerender: () => renderView(false) }));
   } catch (ex) {
     // Surface the failure instead of rendering a blank page.
     main.append(h('div', { class: 'notice warn', role: 'alert' }, `This view failed to render: ${ex.message}`));
     console.error(ex);
   }
+  enhance(main);
   window.scrollTo(0, 0);
 }
-window.addEventListener('hashchange', () => { if (state) renderView(); });
+
+// Cross-fade between views where the browser supports it; plain swap otherwise.
+function renderView(animate = true) {
+  if (animate && document.startViewTransition && !REDUCED.matches) document.startViewTransition(paint);
+  else paint();
+}
+window.addEventListener('hashchange', () => { if (state) renderView(true); });
 
 /* ---------- command palette ---------- */
 function openPalette() {
