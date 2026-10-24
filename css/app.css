@@ -241,6 +241,7 @@ svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
 .milestones .item .when { min-width: 6.6em; }
 
 .gap { height: 12px; }
+.note { padding: 12px 18px 16px; border-top: 1px solid var(--line); font-size: 12.5px; }
 .notice { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 11px 16px; color: var(--mute); }
 .notice.warn { border-color: oklch(0.86 0.09 82); background: var(--warn-soft); color: var(--text); }
 

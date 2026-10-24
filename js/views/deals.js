@@ -4,12 +4,21 @@ import { money, mult, fmtDate, rel } from '../lib/fmt.js';
 import { dealScore } from '../lib/uw.js';
 
 export default function deals(state) {
+  const picks = state.topPicks || [];
   const sc = state.scorecard;
   const stages = state.pipelineStages;
   const ds = state.pipeline.map((d) => ({ ...d, score: d.scoreOverride ?? dealScore(d.scores, sc.criteria) }));
   const verdict = (s) => (s == null ? ['todo', 'unscored'] : s >= sc.investigate ? ['good', 'investigate'] : s >= sc.watch ? ['warn', 'watch'] : ['bad', 'usually pass']);
 
   return page('Deals', 'A deal enters only after a real conversation. Move a stage only when evidence supports it. Scores below the pass line usually pass.', null,
+    picks.length ? panel('Top picks: what each one earns', { meta: 'base case, before tax, unverified', flush: true },
+      h('div', { class: 'scroll-x' }, h('table', {},
+        h('thead', {}, h('tr', {}, ['Pick', 'Status', 'Cash needed', 'Yearly profit', 'If earnings -25%', '5-year total', 'Verify first'].map((x, i) => h('th', { class: i >= 2 && i <= 5 ? 'num' : '' }, x)))),
+        h('tbody', {}, picks.map((x) => h('tr', {},
+          h('td', {}, x.name, h('div', { class: 'sub' }, x.price)), h('td', {}, x.status),
+          h('td', { class: 'num' }, x.cash), h('td', { class: 'num' }, x.profit), h('td', { class: 'num' }, x.downside), h('td', { class: 'num' }, x.fiveYear), h('td', {}, x.verify))))),
+      ),
+      h('p', { class: 'faint note' }, state.topPicksNote || '')) : null,
     panel('Pipeline by stage', { meta: `${ds.length} deals`, flush: true },
       h('div', { class: 'board' }, stages.map((st) => {
         const items = ds.filter((d) => d.stage === st);
