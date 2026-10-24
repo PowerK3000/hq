@@ -16,7 +16,7 @@ export default function overview(state, ctx) {
   const upNext = [...stats.open].sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999')).slice(0, 3);
   const dates = agenda(state, 0, 120).filter((i) => i.src !== 'task').slice(0, 3);
 
-  const sc = state.underwriting.scenarios[1] || state.underwriting.scenarios[0];
+  const sc = state.underwriting.scenarios[0];
   const gap = Math.max(underwrite(sc.inputs).cashNeeded - state.capital.personalCash.high, 0);
 
   const door = (view, name, summary) => h('button', { class: 'door', type: 'button', onclick: () => ctx.go(view) },
@@ -52,7 +52,7 @@ export default function overview(state, ctx) {
         door('funnel', 'Funnel', `${week.conversations} conversations, ${week.outreach} outreach this week`),
         door('network', 'Network', `${state.contacts.length} contacts`),
         door('deals', 'Deals', `${state.pipeline.length} in pipeline`),
-        door('underwriting', 'Underwriting', `example DSCR ${mult(underwrite(sc.inputs).dscr)}`),
-        door('capital', 'Capital', `gap on the micro example: ${money(gap, true)}`),
+        door('underwriting', 'Underwriting', `${sc.name.split(' (')[0]}: DSCR ${mult(underwrite(sc.inputs).dscr)}`),
+        door('capital', 'Capital', `gap on ${sc.name.split(' (')[0]}: ${money(gap, true)}`),
         door('portfolio', 'Portfolio', hm.count ? `${hm.count} holdings` : 'first holding pending'))));
 }

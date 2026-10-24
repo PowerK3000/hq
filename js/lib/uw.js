@@ -31,8 +31,11 @@ export function underwrite(i) {
 export function buyBoxTest(i, o, box) {
   const t = [];
   const mk = (label, pass) => t.push({ label, pass });
-  mk(`Price ${box.priceMin / 1000}K to ${box.priceMax / 1000}K`, i.price >= box.priceMin && i.price <= box.priceMax);
-  mk(`SDE at least ${box.sdeMin / 1000}K`, o.sde >= box.sdeMin);
+  const fp = (n) => (n >= 1e6 ? `${n / 1e6}M` : `${n / 1000}K`);
+  mk(`Price ${fp(box.priceMin)} to ${fp(box.priceMax)}`, i.price >= box.priceMin && i.price <= box.priceMax);
+  // GM-run tier: earnings must cover the GM plus 1.25x debt service (about GM + 16% of price).
+  const need = box.gm ? box.gm + 0.162 * i.price : box.sdeMin;
+  mk(box.gm ? `Earnings at least ${Math.round(need / 1000)}K (GM ${box.gm / 1000}K + 16% of price)` : `SDE at least ${box.sdeMin / 1000}K`, o.sde >= need);
   mk(`Multiple at most ${box.multipleMax}x`, o.multiple <= box.multipleMax);
   mk(`DSCR at least ${box.dscrPreferred}x (preferred)`, o.dscr >= box.dscrPreferred);
   mk(`DSCR at least ${box.dscrFloor}x (floor)`, o.dscr >= box.dscrFloor);

@@ -160,7 +160,11 @@ function paint() {
 
 // Cross-fade between views where the browser supports it; plain swap otherwise.
 function renderView(animate = true) {
-  if (animate && document.startViewTransition && !REDUCED.matches) document.startViewTransition(paint);
+  if (animate && document.startViewTransition && !REDUCED.matches) {
+    // A newer navigation can skip an in-flight transition; that is expected, so swallow the rejections.
+    const tr = document.startViewTransition(paint);
+    tr.ready.catch(() => {}); tr.finished.catch(() => {}); tr.updateCallbackDone.catch(() => {});
+  }
   else paint();
 }
 window.addEventListener('hashchange', () => { if (state) renderView(true); });

@@ -12,7 +12,7 @@ export default function calendar(state) {
     if (!groups.has(wk)) groups.set(wk, []);
     groups.get(wk).push(i);
   }
-  return page('Calendar', 'Deadlines, milestones and task due dates in one timeline. Real calendar events sync in when Claude refreshes from your calendar.', null,
+  return page('Calendar', 'Deadlines, milestones and task due dates in one timeline. Personal calendar events (Google, Notion) are not synced yet; these dates come from the plan and tasks.', null,
     items.length ? [...groups.entries()].map(([wk, list]) =>
       panel(`Week of ${fmtDate(wk, false)}`, { meta: rel(wk), flush: true },
         h('div', { class: 'list' }, list.map((i) => h('div', { class: 'item' },

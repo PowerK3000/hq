@@ -24,12 +24,17 @@ export function taskStats(state) {
 }
 
 // Dated things in one list: deadlines, open task due dates, open milestones.
+// A deadline or milestone that restates a task due the same day (2+ shared significant words) is dropped so nothing shows twice.
+const STOP = new Set(['the', 'and', 'for', 'with', 'due', 'date', 'path', 'free', 'vs.', 'vs']);
+const words = (t) => new Set(t.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter((w) => w.length >= 3 && !STOP.has(w)));
+const overlaps = (a, b) => { const wa = words(a); let n = 0; for (const w of words(b)) if (wa.has(w)) n++; return n >= 2; };
 export function agenda(state, fromDays = -7, toDays = 400) {
-  const items = [];
-  for (const d of state.deadlines) items.push({ date: d.date, title: d.title, kind: d.type, src: 'deadline' });
-  for (const t of openTasks(state)) if (t.due) items.push({ date: t.due, title: t.title, kind: 'task', owner: t.owner, src: 'task', ref: t.id });
-  for (const m of state.milestones) if (!m.done) items.push({ date: m.date, title: m.title, kind: 'milestone', src: 'milestone' });
-  return items
+  const tasks = openTasks(state).filter((t) => t.due).map((t) => ({ date: t.due, title: t.title, kind: 'task', owner: t.owner, src: 'task', ref: t.id }));
+  const miles = state.milestones.filter((m) => !m.done).map((m) => ({ date: m.date, title: m.title, kind: 'milestone', src: 'milestone' }))
+    .filter((m) => !tasks.some((t) => t.date === m.date && overlaps(t.title, m.title)));
+  const deadlines = state.deadlines.map((x) => ({ date: x.date, title: x.title, kind: x.type, src: 'deadline' }))
+    .filter((x) => !tasks.some((t) => t.date === x.date && overlaps(t.title, x.title)) && !miles.some((m) => m.date === x.date && overlaps(m.title, x.title)));
+  return [...deadlines, ...tasks, ...miles]
     .filter((i) => { const n = daysUntil(i.date); return n != null && n >= fromDays && n <= toDays; })
     .sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -63,7 +68,8 @@ export function funnelTotals(state) {
 export function contactCoverage(state) {
   return state.contactTargets.map((t) => {
     const have = state.contacts.filter((c) => c.type === t.type && ['Met', 'Active'].includes(c.status)).length;
-    return { ...t, have };
+    const contacted = state.contacts.filter((c) => c.type === t.type && c.status === 'Contacted').length;
+    return { ...t, have, contacted };
   });
 }
 

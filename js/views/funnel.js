@@ -14,9 +14,9 @@ export default function funnelView(state) {
 
   return page('Funnel', 'Activity is the leading indicator. A search is a long funnel: dozens of listings reviewed per serious conversation.', null,
     h('div', { class: 'grid g2' },
-      panel('Weekly activity', { meta: 'last 12 weeks' },
-        barChart({ groups: weeks.map((w) => ({ label: w.week.slice(5), values: [w.conversations, w.outreach, w.listings] })), series: [{ name: 'Conversations' }, { name: 'Outreach sent' }, { name: 'Listings reviewed' }], target: tg.outreach, todayIndex: weeks.length - 1 }),
-        legend(['Conversations', 'Outreach sent', 'Listings reviewed'])),
+      panel('Weekly activity', { meta: 'last 12 weeks; listings screened are in the table' },
+        barChart({ groups: weeks.map((w) => ({ label: w.week.slice(5), values: [w.conversations, w.outreach] })), series: [{ name: 'Conversations' }, { name: 'Outreach sent' }], target: tg.outreach, todayIndex: weeks.length - 1 }),
+        legend(['Conversations', 'Outreach sent'])),
       panel('Cumulative touches', { meta: 'conversations + outreach' },
         lineChart({ points: cumPoints }))),
     h('div', { class: 'grid g2' },

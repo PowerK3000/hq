@@ -34,7 +34,7 @@ export default function network(state) {
             : empty('No contacts yet', 'Nobody has been contacted on the ETA path yet. Each real conversation (lender, broker, SBDC or SCORE adviser, someone who bought a business) becomes a row with a last-contact date and a next step.')),
         panel('Coverage vs. goals', { meta: 'by 2026-11-30' },
           contactCoverage(state).map((t) => h('div', { class: 'rowbar' },
-            h('span', { class: 'lab', title: t.label }, t.label), progress(t.goal ? t.have / t.goal : 0), h('span', { class: 'num' }, `${t.have}/${t.goal}`)))))));
+            h('span', { class: 'lab', title: t.label }, t.contacted ? `${t.label} (${t.contacted} contacted)` : t.label), progress(t.goal ? t.have / t.goal : 0), h('span', { class: 'num' }, `${t.have}/${t.goal}`)))))));
   };
   render();
   return root;
